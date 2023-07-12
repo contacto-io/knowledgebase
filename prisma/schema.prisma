@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgres://kms:password@localhost:5433/kmsdb"
 }
 
 model KnowledgeBase {

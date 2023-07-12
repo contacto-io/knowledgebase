@@ -55,6 +55,7 @@
     "sqlite3": "^5.1.6",
     "swr": "^2.2.0",
     "tippy.js": "^6.3.7",
+    "tiptap-imagresize": "^1.0.2",
     "use-debounce": "^9.0.3"
   },
   "devDependencies": {

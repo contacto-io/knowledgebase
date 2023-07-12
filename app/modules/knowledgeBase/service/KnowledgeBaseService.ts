@@ -81,7 +81,7 @@ async function getAll({ enabled }: { enabled?: boolean }): Promise<KnowledgeBase
 
 async function get({ slug, enabled }: { slug: string; enabled?: boolean }): Promise<KnowledgeBaseDto> {
   const item = await getKnowledgeBaseBySlug(slug);
-  if (!item || (enabled !== undefined && item.enabled !== enabled)) {
+  if (!item || (enabled !== undefined && item.enabled === enabled)) {
     throw new Error("Knowledge base not found");
   }
   return kbToDto(item);
