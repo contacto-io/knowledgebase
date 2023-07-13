@@ -46,7 +46,7 @@ export default function SidebarIconsLayout({
   }, [items, location.pathname, location.search]);
 
   return (
-    <div className="sm:flex sm:h-[calc(100vh-56px)] sm:flex-row sm:bg-gray-50">
+    <div className="sm:flex sm:h-[calc(100vh)] sm:flex-row sm:bg-gray-50">
       <div
         className={clsx(
           "hidden flex-none flex-col items-center justify-between border-r border-gray-200 bg-gray-100 shadow-sm sm:flex",

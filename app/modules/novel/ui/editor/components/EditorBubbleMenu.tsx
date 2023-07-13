@@ -12,7 +12,7 @@ import {
 
 import { NodeSelector } from "./NodeSelector";
 import { ColorSelector } from "./ColorSelector";
-
+import { uploadFileUrl } from "../utils"
 export interface BubbleMenuItem {
   name: string;
   isActive: () => boolean;
@@ -77,6 +77,8 @@ export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
 
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
   const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false);
+  const aomUuid = '6c71a567-6222-41c8-80ed-452bb1ace00a'
+  const authToken = 'ZLcAWnsiZW1haWwiOiAicmlzaGFiaC5jQHBsaXZvLmNvbSIsICJ0b2tlbl92ZXJzaW9uIjogNCwgImRhdGVfZ2VuZXJhdGVkIjogMTY4OTA2MzQ5NH0=='
 
   const addImage = (url: string) => {
     if (url) {
@@ -90,14 +92,16 @@ export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
     inputRef.current.click();
   };
 
-  const handleFileChange = (event: any) => {
+  const handleFileChange = async (event: any) => {
     const fileObj = event.target.files && event.target.files[0];
     if (!fileObj) {
       return;
     }
-    const url = URL.createObjectURL(fileObj);
-    addImage(url);
-    // 👇️ reset file input
+    let controller = new AbortController();
+    let responseResult = await uploadFileUrl(fileObj, { authToken, aomUuid }, controller)
+    addImage(responseResult?.file_url);
+    
+    // reset file input
     event.target.value = null;
   };
 

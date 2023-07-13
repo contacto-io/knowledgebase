@@ -17,7 +17,7 @@ export default function SidebarLayout({ layout, children }: Props) {
   const mainElement = useRef<HTMLElement>(null);
   useElementScrollRestoration({ apply: true }, mainElement);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   return (
     <div>
       <div className="flex h-screen overflow-hidden bg-gray-100 text-gray-800">
@@ -105,7 +105,7 @@ export default function SidebarLayout({ layout, children }: Props) {
 
         {/*Content */}
         <div className="flex w-0 flex-1 flex-col overflow-hidden">
-          <div className="relative flex h-14 flex-shrink-0 border-b border-gray-200 bg-white shadow-inner">
+          {/* <div className="relative flex h-14 flex-shrink-0 border-b border-gray-200 bg-white shadow-inner">
             <button
               className="border-r border-gray-200 px-4 text-gray-600 focus:bg-gray-100 focus:text-gray-600 focus:outline-none"
               aria-label="Open sidebar"
@@ -117,7 +117,7 @@ export default function SidebarLayout({ layout, children }: Props) {
             </button>
 
             <NavBar title={"Admin"} />
-          </div>
+          </div> */}
 
           <main ref={mainElement} className="flex-1 overflow-y-auto bg-gray-50 focus:outline-none" tabIndex={0}>
             <div key={params.tenant} className="pb-20 sm:pb-0">
