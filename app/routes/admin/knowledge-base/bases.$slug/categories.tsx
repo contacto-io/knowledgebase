@@ -41,7 +41,7 @@ export let loader = async ({ params }: LoaderArgs) => {
   }
   const items = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: params.slug!,
-    language: params.lang!,
+    language: 'en',
   });
   const data: LoaderData = {
     knowledgeBase,
@@ -105,7 +105,7 @@ export const action = async ({ request, params }: ActionArgs) => {
   } else if (action === "duplicate") {
     try {
       const categoryId = form.get("id")?.toString() ?? "";
-      await KnowledgeBaseService.duplicateCategory({ kb, language: params.lang!, categoryId });
+      await KnowledgeBaseService.duplicateCategory({ kb, language: 'en', categoryId });
       return json({ duplicated: true });
     } catch (e: any) {
       return json({ error: e.message }, { status: 400 });
@@ -182,12 +182,12 @@ export default function () {
   }
   return (
     <EditPageLayout
-      title={`Categories (${KnowledgeBaseUtils.getLanguageName(params.lang!)})`}
+      title={`Categories (${KnowledgeBaseUtils.getLanguageName('en')})`}
       withHome={false}
       menu={[
         { title: "Knowledge Bases", routePath: "/admin/knowledge-base/bases" },
         { title: "Categories", routePath: `/admin/knowledge-base/bases/${params.slug}/categories` },
-        { title: params.lang!, routePath: `/admin/knowledge-base/bases/${params.slug}/categories/${params.lang}` },
+        { title: params.lang!, routePath: `/admin/knowledge-base/bases/${params.slug}/categories` },
       ]}
     >
       <div className="space-y-2">

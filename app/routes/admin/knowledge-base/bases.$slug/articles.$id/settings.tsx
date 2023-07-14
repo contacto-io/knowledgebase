@@ -35,7 +35,7 @@ export let loader = async ({ params }: LoaderArgs) => {
   }
   const categories = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: knowledgeBase.slug,
-    language: params.lang!,
+    language: 'en',
   });
   const data: LoaderData = {
     knowledgeBase,
@@ -68,7 +68,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     const existing = await getKbArticleBySlug({
       knowledgeBaseId: kb.id,
       slug,
-      language: params.lang!,
+      language: 'en',
     });
     if (existing && existing.id !== item.id) {
       return json({ error: "Slug already exists" }, { status: 400 });
@@ -98,16 +98,16 @@ export const action = async ({ request, params }: ActionArgs) => {
       title,
       description,
       order: 0,
-      language: params.lang!,
+      language: 'en',
       featuredOrder,
       author: "",
       seoImage,
     });
 
-    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${item.id}`);
+    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${item.id}`);
   } else if (action === "delete") {
     await deleteKnowledgeBaseArticle(item.id);
-    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}`);
+    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles`);
   }
   return json({ error: "Invalid action" }, { status: 400 });
 };

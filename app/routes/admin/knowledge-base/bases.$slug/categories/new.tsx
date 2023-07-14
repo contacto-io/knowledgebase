@@ -38,7 +38,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 
     const allCategories = await getAllKnowledgeBaseCategories({
       knowledgeBaseSlug: params.slug!,
-      language: params.lang!,
+      language: 'en',
     });
     let maxOrder = 0;
     if (allCategories.length > 0) {
@@ -48,7 +48,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     const existing = await getKbCategoryBySlug({
       knowledgeBaseId: knowledgeBase.id,
       slug,
-      language: params.lang!,
+      language: 'en',
     });
     if (existing) {
       return json({ error: "Slug already exists" }, { status: 400 });
@@ -61,7 +61,7 @@ export const action = async ({ request, params }: ActionArgs) => {
         title,
         description,
         icon,
-        language: params.lang!,
+        language: 'en',
         seoImage,
         order: maxOrder + 1,
       });
@@ -69,7 +69,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       return json({ error: e.message }, { status: 400 });
     }
 
-    return redirect(`/admin/knowledge-base/bases/${params.slug}/categories/${params.lang}`);
+    return redirect(`/admin/knowledge-base/bases/${params.slug}/categories`);
   } else {
     return json({ error: "Invalid form" }, { status: 400 });
   }
@@ -81,7 +81,7 @@ export default function () {
 
   return (
     <div>
-      <KbCategoryForm knowledgeBase={data.knowledgeBase} language={params.lang!} />
+      <KbCategoryForm knowledgeBase={data.knowledgeBase} language={'en'} />
     </div>
   );
 }
