@@ -13,6 +13,7 @@ import { countKnowledgeBaseCategories } from "~/modules/knowledgeBase/db/kbCateg
 import { countKnowledgeBases } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
 import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import NumberUtils from "~/utils/shared/NumberUtils";
+import Cookies from 'universal-cookie';
 
 type LoaderData = {
   metatags: MetaTagsDto;
@@ -30,6 +31,10 @@ export let loader: LoaderFunction = async ({request, context}) => {
   await authenticateClientV2({request, context, params:{}})
   const orgUuid = context['org_uuid'] as string;
 
+  const cookieStr = request.headers.get('cookie')
+  const cookie = new Cookies(cookieStr)
+  console.log('auth data : ', cookie.get('xAuth'))
+  
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
     summary: {

@@ -17,6 +17,7 @@ import KnowledgeBaseTemplatesService from "~/modules/knowledgeBase/service/Knowl
 import { KnowledgeBasesTemplateDto } from "~/modules/knowledgeBase/dtos/KnowledgeBasesTemplateDto";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
+import Cookies from "universal-cookie";
 
 type LoaderData = {
   metatags: MetaTagsDto;
@@ -27,6 +28,11 @@ export let loader: LoaderFunction = async ({ request, context }) => {
   await authenticateClientV2({request, context, params:{}})
   const orgUuid = context['org_uuid'] as string;
 
+  const cookieStr = request.headers.get('cookie')
+  console.log('COOKIE STR  : ', cookieStr)
+  const cookie = new Cookies(cookieStr)
+  console.log('auth data BASES : ', cookie.get('xAuth'))
+  
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
     items: await KnowledgeBaseService.getAll({ orgUuid: orgUuid}),
