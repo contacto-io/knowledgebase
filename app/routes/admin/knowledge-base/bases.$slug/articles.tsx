@@ -58,7 +58,7 @@ export let loader = async ({ request, params }: LoaderArgs) => {
       title: "Category",
       options: [
         { value: "null", name: "{null}" },
-        ...(await getAllKnowledgeBaseCategories({ knowledgeBaseSlug: knowledgeBase.slug, language: params.lang! })).map((item) => {
+        ...(await getAllKnowledgeBaseCategories({ knowledgeBaseSlug: knowledgeBase.slug, language: 'en' })).map((item) => {
           return {
             value: item.id,
             name: item.title,
@@ -75,7 +75,7 @@ export let loader = async ({ request, params }: LoaderArgs) => {
   };
   const { items, pagination } = await getAllKnowledgeBaseArticlesWithPagination({
     knowledgeBaseSlug: params.slug!,
-    language: params.lang!,
+    language: 'en',
     pagination: currentPagination,
     filters: {
       title: filtered.title,
@@ -105,7 +105,7 @@ export const action = async ({ request, params }: ActionArgs) => {
   if (action === "new") {
     const allArticles = await getAllKnowledgeBaseArticles({
       knowledgeBaseSlug: kb.slug,
-      language: params.lang!,
+      language: 'en',
     });
     const { slug, maxOrder, number } = KnowledgeBaseUtils.getAvailableArticleSlug({
       allArticles,
@@ -122,13 +122,13 @@ export const action = async ({ request, params }: ActionArgs) => {
       contentDraft: "",
       contentPublished: "",
       contentType: "wysiwyg",
-      language: params.lang!,
+      language: 'en',
       featuredOrder: null,
       author: "",
       seoImage: "",
       publishedAt: null,
     });
-    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${created.id}/edit`);
+    return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${created.id}/edit`);
   } else if (action === "set-orders") {
     const items: { id: string; order: number }[] = form.getAll("orders[]").map((f: FormDataEntryValue) => {
       return JSON.parse(f.toString());
@@ -158,8 +158,8 @@ export const action = async ({ request, params }: ActionArgs) => {
   } else if (action === "duplicate") {
     try {
       const id = form.get("id")?.toString() ?? "";
-      const item = await KnowledgeBaseService.duplicateArticle({ kb, language: params.lang!, articleId: id });
-      return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${item.id}`);
+      const item = await KnowledgeBaseService.duplicateArticle({ kb, language: 'en', articleId: id });
+      return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${item.id}`);
     } catch (e: any) {
       return json({ error: e.message }, { status: 400 });
     }
@@ -224,12 +224,12 @@ export default function () {
   }
   return (
     <EditPageLayout
-      title={`Articles (${KnowledgeBaseUtils.getLanguageName(params.lang!)})`}
+      title={`Articles (${KnowledgeBaseUtils.getLanguageName('en')})`}
       withHome={false}
       menu={[
         { title: "Knowledge Bases", routePath: "/admin/knowledge-base/bases" },
         { title: "Articles", routePath: `/admin/knowledge-base/bases/${params.slug}/articles` },
-        { title: params.lang!, routePath: `/admin/knowledge-base/bases/${params.slug}/articles/${params.lang}` },
+        { title: params.lang!, routePath: `/admin/knowledge-base/bases/${params.slug}/articles` },
       ]}
       buttons={
         <>
