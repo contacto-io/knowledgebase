@@ -33,7 +33,7 @@ export default function BreadcrumbSimple({ menu = [], className = "", home = "" 
         )}
         {menu.map((item, idx) => (
           <li key={item.title}>
-            <div className="flex items-center">
+            {item.title && <div className="flex items-center">
               {(idx > 0 || home) && <RightIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />}
               {item.routePath ? (
                 <Link to={item.routePath} className={clsx("select-none text-sm font-normal text-gray-400 hover:text-gray-600", home && "ml-1")}>
@@ -42,10 +42,11 @@ export default function BreadcrumbSimple({ menu = [], className = "", home = "" 
               ) : (
                 <span className="ml-1 select-none text-sm font-normal text-gray-400">{item.title}</span>
               )}
-            </div>
+            </div>}
           </li>
         ))}
       </ol>
     </nav>
   );
 }
+ 

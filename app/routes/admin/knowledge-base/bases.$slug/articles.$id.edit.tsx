@@ -11,7 +11,6 @@ import { KnowledgeBaseArticleWithDetails, getKbArticleById, updateKnowledgeBaseA
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
-import KnowledgeBaseUtils from "~/modules/knowledgeBase/utils/KnowledgeBaseUtils";
 
 type LoaderData = {
   knowledgeBase: KnowledgeBaseDto;
@@ -57,7 +56,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       contentType,
     });
 
-    return redirect(`/admin/knowledge-base/bases/${params.slug}/articles/${params.lang}/${params.id}`);
+    return redirect(`/admin/knowledge-base/bases/${params.slug}/articles/${params.id}`);
   }
   return json({ error: "Invalid action" }, { status: 400 });
 };
@@ -86,7 +85,7 @@ export default function () {
         ]}
         buttons={
           <>
-            <ButtonSecondary to={`/admin/knowledge-base/bases/${params.slug}/articles/${params.lang}/${params.id}`}>
+            <ButtonSecondary to={`/admin/knowledge-base/bases/${params.slug}/articles/${params.id}`}>
               <div>Cancel</div>
             </ButtonSecondary>
             <LoadingButton type="submit">
