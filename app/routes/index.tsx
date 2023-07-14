@@ -1,6 +1,5 @@
 import { json } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { useEffect } from "react";
 import { useTypedLoaderData } from "remix-typedjson";
 import Header from "~/components/Header";
 import ServerError from "~/components/ServerError";

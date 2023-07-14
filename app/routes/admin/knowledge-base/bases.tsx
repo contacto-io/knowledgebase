@@ -12,7 +12,6 @@ import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto"
 import { MetaTagsDto } from "~/application/dtos/seo/MetaTagsDto";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 import { updateKnowledgeBase } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
-import ButtonSecondary from "~/components/ui/buttons/ButtonSecondary";
 import KnowledgeBaseTemplatesService from "~/modules/knowledgeBase/service/KnowledgeBaseTemplatesService";
 import { KnowledgeBasesTemplateDto } from "~/modules/knowledgeBase/dtos/KnowledgeBasesTemplateDto";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
@@ -121,8 +120,8 @@ export default function CampaignsListRoute() {
           />
         </div>
         <div className="flex space-x-1">
-          <ButtonSecondary to="import">Import</ButtonSecondary>
-          <ButtonSecondary onClick={onExport}>Export</ButtonSecondary>
+          {/* <ButtonSecondary to="import">Import</ButtonSecondary>
+          <ButtonSecondary onClick={onExport}>Export</ButtonSecondary> */}
           <ButtonPrimary to="new">
             <div>New</div>
             <PlusIcon className="h-5 w-5" />
