@@ -16,6 +16,7 @@ export type KbArticleDto = {
   author: { email: string; firstName: string; lastName: string; avatar: string };
   seoImage: string;
   publishedAt: Date | null;
+  publishStatus: string;
   href: string;
   sectionId: string | null;
   relatedArticles: { order: number; title: string; slug: string; href: string }[];

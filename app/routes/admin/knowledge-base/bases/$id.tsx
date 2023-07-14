@@ -1,4 +1,4 @@
-import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node";
+import { ActionArgs, LoaderArgs, LoaderFunction, json, redirect } from "@remix-run/node";
 import { useSubmit } from "@remix-run/react";
 import { useRef } from "react";
 import { useTypedActionData, useTypedLoaderData } from "remix-typedjson";
@@ -8,14 +8,18 @@ import KnowledgeBaseForm from "~/modules/knowledgeBase/components/bases/Knowledg
 import { getKnowledgeBaseBySlug, updateKnowledgeBase } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
 import { KbNavLinkDto } from "~/modules/knowledgeBase/dtos/KbNavLinkDto";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
 type LoaderData = {
   item: KnowledgeBaseDto;
 };
-export let loader = async ({ params }: LoaderArgs) => {
-  const item = await KnowledgeBaseService.getById(params.id!);
+export let loader: LoaderFunction = async ({ request, context, params }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params})
+  const orgUuid = context['org_uuid'] as string;
+
+  const item = await KnowledgeBaseService.getById(params.id!, orgUuid);
   if (!item) {
     return redirect("/admin/knowledge-base/bases");
   }
@@ -29,12 +33,15 @@ type ActionData = {
   error?: string;
   success?: string;
 };
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params})
+  const orgUuid = context['org_uuid'] as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
-  const item = await KnowledgeBaseService.getById(params.id!);
+  const item = await KnowledgeBaseService.getById(params.id!, orgUuid);
   if (!item) {
     return redirect("/admin/knowledge-base/bases");
   }
@@ -56,7 +63,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       return json({ error: "At least one language is required" }, { status: 400 });
     }
 
-    const existing = await getKnowledgeBaseBySlug(slug);
+    const existing = await getKnowledgeBaseBySlug(slug, orgUuid);
     if (existing && existing.id !== item.id) {
       return json({ error: "Slug already exists" }, { status: 400 });
     }

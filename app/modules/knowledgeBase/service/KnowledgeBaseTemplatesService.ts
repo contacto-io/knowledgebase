@@ -6,6 +6,7 @@ import { KbNavLinkDto } from "../dtos/KbNavLinkDto";
 import { KnowledgeBasesTemplateDto } from "../dtos/KnowledgeBasesTemplateDto";
 import { KnowledgeBaseCategoryWithDetails } from "../helpers/KbCategoryModelHelper";
 import { createKnowledgeBaseCategorySection, updateKnowledgeBaseCategorySection } from "../db/kbCategorySections.db.server";
+import { v4 as uuidv4 } from "uuid";
 
 async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
   const template: KnowledgeBasesTemplateDto = {
@@ -16,6 +17,7 @@ async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
   const allKbs = await getAllKnowledgeBases();
   for (const kb of allKbs) {
     template.knowledgeBases.push({
+      orgUuid: kb.orgUuid,
       slug: kb.slug,
       title: kb.title,
       description: kb.description,
@@ -31,6 +33,7 @@ async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
     const allCategories = await getAllKnowledgeBaseCategories({
       knowledgeBaseSlug: kb.slug,
       language: undefined,
+      orgUuid: kb.orgUuid,
     });
     for (const category of allCategories) {
       template.categories.push({
@@ -51,6 +54,7 @@ async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
     }
     const allArticles = await getAllKnowledgeBaseArticles({
       knowledgeBaseSlug: kb.slug,
+      orgUuid: kb.orgUuid,
       language: undefined,
     });
     for (const article of allArticles) {
@@ -69,6 +73,7 @@ async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
         featuredOrder: article.featuredOrder,
         seoImage: article.seoImage,
         publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
+        publishStatus: article.publishStatus,
         relatedArticles: article.relatedArticles.map((relatedArticle) => ({
           slug: relatedArticle.slug,
         })),
@@ -78,7 +83,7 @@ async function getTemplate(): Promise<KnowledgeBasesTemplateDto> {
   return template;
 }
 
-async function importKbs(template: KnowledgeBasesTemplateDto) {
+async function importKbs(template: KnowledgeBasesTemplateDto, aomUuid: string) {
   let created = {
     kbs: 0,
     categories: 0,
@@ -92,7 +97,7 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
     articles: 0,
   };
   for (const kb of template.knowledgeBases) {
-    let existing: KnowledgeBase | null = await getKnowledgeBaseBySlug(kb.slug);
+    let existing: KnowledgeBase | null = await getKnowledgeBaseBySlug(kb.slug, kb.orgUuid);
     if (existing) {
       await updateKnowledgeBase(existing.id, {
         slug: kb.slug,
@@ -110,6 +115,8 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
       updated.kbs++;
     } else {
       existing = await createKnowledgeBase({
+        uuid: uuidv4(),
+        orgUuid: kb.orgUuid,
         slug: kb.slug,
         title: kb.title,
         description: kb.description,
@@ -143,6 +150,7 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
         updated.categories++;
       } else {
         existingCategory = await createKnowledgeBaseCategory({
+          uuid: uuidv4(),
           knowledgeBaseId: existing.id,
           slug: category.slug,
           title: category.title,
@@ -168,6 +176,7 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
           updated.sections++;
         } else {
           await createKnowledgeBaseCategorySection({
+            uuid: uuidv4(),
             categoryId: existingCategory?.id ?? null,
             order: section.order,
             title: section.title,
@@ -181,6 +190,7 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
     for (const article of template.articles.filter((a) => a.knowledgeBaseSlug === kb.slug)) {
       let existingArticle: KnowledgeBaseArticle | null = await getKbArticleBySlug({
         knowledgeBaseId: existing.id,
+        orgUuid: existing.orgUuid,
         slug: article.slug,
         language: article.language,
       });
@@ -201,6 +211,8 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
       }
       if (existingArticle) {
         await updateKnowledgeBaseArticle(existingArticle.id, {
+          updatedBy: aomUuid,
+          publishStatus: article.publishStatus,
           categoryId: category?.id ?? null,
           sectionId: sectionId,
           slug: article.slug,
@@ -222,6 +234,8 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
         updated.articles++;
       } else {
         existingArticle = await createKnowledgeBaseArticle({
+          uuid: uuidv4(),
+          createdBy: aomUuid,
           knowledgeBaseId: existing.id,
           categoryId: category?.id ?? null,
           sectionId: sectionId,

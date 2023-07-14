@@ -1,5 +1,6 @@
 export type KnowledgeBasesTemplateDto = {
   knowledgeBases: {
+    orgUuid: string;
     slug: string;
     title: string;
     description: string;
@@ -42,6 +43,7 @@ export type KnowledgeBasesTemplateDto = {
     featuredOrder: number | null;
     seoImage: string;
     publishedAt: string | null;
+    publishStatus: string;
     relatedArticles: { slug: string }[];
   }[];
 };

@@ -9,8 +9,15 @@ export type KnowledgeBaseCategorySectionWithDetails = KnowledgeBaseCategorySecti
   }[];
 };
 
-export async function getAllKnowledgeBaseCategorySections(): Promise<KnowledgeBaseCategorySectionWithDetails[]> {
+export async function getAllKnowledgeBaseCategorySections(orgUuid: string): Promise<KnowledgeBaseCategorySectionWithDetails[]> {
   return await db.knowledgeBaseCategorySection.findMany({
+    where: {
+      category: { 
+        knowledgeBase: { orgUuid, isDeleted: false },
+        isDeleted: false,
+      },
+      isDeleted: false,
+    },
     include: {
       articles: { select: { id: true, order: true, title: true } },
     },
@@ -18,17 +25,18 @@ export async function getAllKnowledgeBaseCategorySections(): Promise<KnowledgeBa
 }
 
 export async function getKbCategorySectionById(id: string): Promise<KnowledgeBaseCategorySectionWithDetails | null> {
-  return await db.knowledgeBaseCategorySection.findUnique({
-    where: { id },
+  return await db.knowledgeBaseCategorySection.findFirst({
+    where: { id, isDeleted: false },
     include: {
       articles: { select: { id: true, order: true, title: true } },
     },
   });
 }
 
-export async function createKnowledgeBaseCategorySection(data: { categoryId: string; order: number; title: string; description: string }) {
+export async function createKnowledgeBaseCategorySection(data: { categoryId: string; order: number; title: string; description: string, uuid: string }) {
   return await db.knowledgeBaseCategorySection.create({
     data: {
+      uuid: data.uuid,
       categoryId: data.categoryId,
       order: data.order,
       title: data.title,
@@ -56,7 +64,8 @@ export async function updateKnowledgeBaseCategorySection(
 }
 
 export async function deleteKnowledgeBaseCategorySection(id: string) {
-  return await db.knowledgeBaseCategorySection.delete({
+  return await db.knowledgeBaseCategorySection.update({
     where: { id },
+    data: { isDeleted: true },
   });
 }

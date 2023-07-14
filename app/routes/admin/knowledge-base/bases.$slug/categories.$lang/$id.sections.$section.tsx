@@ -12,6 +12,7 @@ import {
 } from "~/modules/knowledgeBase/db/kbCategorySections.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import { KnowledgeBaseCategoryWithDetails } from "~/modules/knowledgeBase/helpers/KbCategoryModelHelper";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
@@ -20,9 +21,13 @@ type LoaderData = {
   category: KnowledgeBaseCategoryWithDetails;
   item: KnowledgeBaseCategorySectionWithDetails;
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ request, context, params }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   const category = await getKbCategoryById(params.id!);
   if (!category) {
@@ -40,7 +45,11 @@ export let loader = async ({ params }: LoaderArgs) => {
   return json(data);
 };
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, context, params }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -78,6 +87,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       items.map(async ({ id, order }) => {
         await updateKnowledgeBaseArticle(id, {
           order: Number(order),
+          updatedBy: aomUuid,
         });
       })
     );

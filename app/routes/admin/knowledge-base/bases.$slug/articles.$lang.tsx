@@ -1,6 +1,7 @@
 import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node";
 import { Link, useNavigate, useOutlet, useParams, useSubmit } from "@remix-run/react";
 import { useTypedActionData, useTypedLoaderData } from "remix-typedjson";
+import { v4 as uuidv4 } from "uuid";
 import { FilterablePropertyDto } from "~/application/dtos/data/FilterablePropertyDto";
 import { PaginationDto } from "~/application/dtos/data/PaginationDto";
 import { Colors } from "~/application/enums/shared/Colors";
@@ -25,6 +26,7 @@ import {
 import { getAllKnowledgeBaseCategories, updateKnowledgeBaseCategory } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { updateKnowledgeBaseCategorySection } from "~/modules/knowledgeBase/db/kbCategorySections.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 import KnowledgeBaseUtils from "~/modules/knowledgeBase/utils/KnowledgeBaseUtils";
@@ -35,9 +37,13 @@ type LoaderData = {
   pagination: PaginationDto;
   filterableProperties: FilterablePropertyDto[];
 };
-export let loader = async ({ request, params }: LoaderArgs) => {
+export let loader = async ({ request, params, context }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params})
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   if (!knowledgeBase) {
     return redirect("/admin/knowledge-base/bases");
@@ -58,7 +64,7 @@ export let loader = async ({ request, params }: LoaderArgs) => {
       title: "Category",
       options: [
         { value: "null", name: "{null}" },
-        ...(await getAllKnowledgeBaseCategories({ knowledgeBaseSlug: knowledgeBase.slug, language: params.lang! })).map((item) => {
+        ...(await getAllKnowledgeBaseCategories({ knowledgeBaseSlug: knowledgeBase.slug, language: params.lang!, orgUuid })).map((item) => {
           return {
             value: item.id,
             name: item.title,
@@ -74,6 +80,7 @@ export let loader = async ({ request, params }: LoaderArgs) => {
     categoryId: filters.properties.find((f) => f.name === "categoryId")?.value ?? undefined,
   };
   const { items, pagination } = await getAllKnowledgeBaseArticlesWithPagination({
+    orgUuid,
     knowledgeBaseSlug: params.slug!,
     language: params.lang!,
     pagination: currentPagination,
@@ -95,15 +102,20 @@ export let loader = async ({ request, params }: LoaderArgs) => {
 type ActionData = {
   error?: string;
 };
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params})
+  const orgUuid = context['org_uuid'] as string;
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString() ?? "";
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
-  const kb = await KnowledgeBaseService.get({ slug: params.slug! });
+  const kb = await KnowledgeBaseService.get({ slug: params.slug!, orgUuid });
 
   if (action === "new") {
     const allArticles = await getAllKnowledgeBaseArticles({
+      orgUuid,
       knowledgeBaseSlug: kb.slug,
       language: params.lang!,
     });
@@ -113,6 +125,8 @@ export const action = async ({ request, params }: ActionArgs) => {
     });
     const created = await createKnowledgeBaseArticle({
       knowledgeBaseId: kb.id,
+      uuid: uuidv4(),
+      createdBy: aomUuid,
       categoryId: null,
       sectionId: null,
       slug,
@@ -190,6 +204,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     }
     await updateKnowledgeBaseArticle(item.id, {
       featuredOrder,
+      updatedBy: aomUuid
     });
 
     return json({ success: "Updated" });

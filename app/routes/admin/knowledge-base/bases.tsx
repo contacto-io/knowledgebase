@@ -16,16 +16,20 @@ import ButtonSecondary from "~/components/ui/buttons/ButtonSecondary";
 import KnowledgeBaseTemplatesService from "~/modules/knowledgeBase/service/KnowledgeBaseTemplatesService";
 import { KnowledgeBasesTemplateDto } from "~/modules/knowledgeBase/dtos/KnowledgeBasesTemplateDto";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 
 type LoaderData = {
   metatags: MetaTagsDto;
   items: KnowledgeBaseDto[];
   template: KnowledgeBasesTemplateDto;
 };
-export let loader: LoaderFunction = async ({ request }) => {
+export let loader: LoaderFunction = async ({ request, context }) => {
+  await authenticateClientV2({request, context, params:{}})
+  const orgUuid = context['org_uuid'] as string;
+
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
-    items: await KnowledgeBaseService.getAll({}),
+    items: await KnowledgeBaseService.getAll({ orgUuid: orgUuid}),
     template: await KnowledgeBaseTemplatesService.getTemplate(),
   };
   return json(data);
@@ -33,7 +37,10 @@ export let loader: LoaderFunction = async ({ request }) => {
 
 export const meta: V2_MetaFunction = ({ data }) => data?.metatags;
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params:{}})
+  const orgUuid = context['org_uuid'] as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -41,7 +48,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     const id = form.get("id")?.toString() ?? "";
     const enabled = form.get("enabled")?.toString() === "true";
 
-    const item = await KnowledgeBaseService.getById(id);
+    const item = await KnowledgeBaseService.getById(id, orgUuid);
     if (!item) {
       return json({ error: "Not found" }, { status: 404 });
     }

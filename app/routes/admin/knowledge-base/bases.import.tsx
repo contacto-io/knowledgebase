@@ -24,6 +24,8 @@ type ActionData = {
 const success = (data: ActionData) => json(data, { status: 200 });
 const badRequest = (data: ActionData) => json(data, { status: 400 });
 export const action: ActionFunction = async ({ request }) => {
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+  
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -41,7 +43,7 @@ export const action: ActionFunction = async ({ request }) => {
   } else if (action === "create") {
     try {
       const template = JSON.parse(form.get("configuration")?.toString() ?? "{}") as KnowledgeBasesTemplateDto;
-      const status = await KnowledgeBaseTemplatesService.importKbs(template);
+      const status = await KnowledgeBaseTemplatesService.importKbs(template, aomUuid);
       const messages: string[] = [];
       messages.push(`Knowledge bases (${status.created.kbs} created, ${status.updated.kbs} updated)`);
       messages.push(`Articles (${status.created.articles} created, ${status.updated.articles} updated)`);

@@ -5,6 +5,7 @@ import EditPageLayout from "~/components/ui/layouts/EditPageLayout";
 import { getAllKnowledgeBaseCategories } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import { KnowledgeBaseCategoryWithDetails } from "~/modules/knowledgeBase/helpers/KbCategoryModelHelper";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 import KnowledgeBaseUtils from "~/modules/knowledgeBase/utils/KnowledgeBaseUtils";
 
@@ -12,9 +13,13 @@ type LoaderData = {
   knowledgeBase: KnowledgeBaseDto;
   items: KnowledgeBaseCategoryWithDetails[];
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ params, context, request }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params})
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   if (!knowledgeBase) {
     return redirect("/admin/knowledge-base/bases");
@@ -22,6 +27,7 @@ export let loader = async ({ params }: LoaderArgs) => {
   const items = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: params.slug!,
     language: undefined,
+    orgUuid
   });
   const data: LoaderData = {
     knowledgeBase,

@@ -11,6 +11,7 @@ import {
 } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import { KnowledgeBaseCategoryWithDetails } from "~/modules/knowledgeBase/helpers/KbCategoryModelHelper";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
@@ -18,9 +19,13 @@ type LoaderData = {
   knowledgeBase: KnowledgeBaseDto;
   item: KnowledgeBaseCategoryWithDetails;
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ params, context, request }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   const item = await getKbCategoryById(params.id!);
   if (!item) {
@@ -33,13 +38,18 @@ export let loader = async ({ params }: LoaderArgs) => {
   return json(data);
 };
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
 
   const item = await getKbCategoryById(params.id!);
@@ -89,6 +99,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       items.map(async ({ id, order }) => {
         await updateKnowledgeBaseArticle(id, {
           order: Number(order),
+          updatedBy: aomUuid
         });
       })
     );

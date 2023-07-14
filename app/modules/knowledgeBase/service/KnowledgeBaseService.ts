@@ -2,7 +2,11 @@ import type { KbArticleDto } from "../dtos/KbArticleDto";
 import type { KbCategoryDto } from "../dtos/KbCategoryDto";
 import type { KbSearchResultDto } from "../dtos/KbSearchResultDto";
 import type { KnowledgeBaseDto } from "../dtos/KnowledgeBaseDto";
-import { KnowledgeBaseWithDetails, getAllKnowledgeBases, getKnowledgeBaseById, getKnowledgeBaseBySlug } from "../db/knowledgeBase.db.server";
+import { 
+  KnowledgeBaseWithDetails, 
+  getAllKnowledgeBases, 
+  getKnowledgeBaseById, 
+  getKnowledgeBaseBySlug } from "../db/knowledgeBase.db.server";
 import { db } from "~/lib/db.server";
 import { KbNavLinkDto } from "../dtos/KbNavLinkDto";
 import {
@@ -16,79 +20,24 @@ import {
 import { createKnowledgeBaseCategory, getAllKnowledgeBaseCategories, getKbCategoryById, getKbCategoryBySlug } from "../db/kbCategories.db.server";
 import KnowledgeBaseUtils from "../utils/KnowledgeBaseUtils";
 import { KnowledgeBaseCategoryWithDetails } from "../helpers/KbCategoryModelHelper";
+import { v4 as uuidv4 } from 'uuid';
 
-async function getAll({ enabled }: { enabled?: boolean }): Promise<KnowledgeBaseDto[]> {
-  const items = await getAllKnowledgeBases({ enabled });
+async function getAll({ enabled, orgUuid }: { enabled?: boolean, orgUuid: string }): Promise<KnowledgeBaseDto[]> {
+  const items = await getAllKnowledgeBases({ enabled, orgUuid });
   return items.map((item) => kbToDto(item));
-  // const items: KnowledgeBaseDto[] = [
-  //   {
-  //     id: "1",
-  //     createdAt: new Date(),
-  //     updatedAt: null,
-  //     slug: "docs",
-  //     title: "Documentation",
-  //     description: "Your documentation description",
-  //     defaultLanguage: "en",
-  //     layout: "list",
-  //     languages: ["en", "es"],
-  //     links: [{ name: "Back to site", href: "/" }],
-  //     color: Colors.PINK,
-  //     logo: "https://yahooder.sirv.com/saasrock/logos/logo-dark.png",
-  //     metatags: [{ title: `Documentation` }],
-  //     enabled: true,
-  //     views: 0,
-  //     count: { categories: 0, articles: 0 },
-  //   },
-  //   {
-  //     id: "2",
-  //     createdAt: new Date(),
-  //     updatedAt: null,
-  //     slug: "help-center",
-  //     title: "Help Center",
-  //     description: "Your help center description",
-  //     defaultLanguage: "es",
-  //     layout: "articles",
-  //     languages: ["en", "es"],
-  //     links: [{ name: "Back to site", href: "/" }],
-  //     color: Colors.BLUE,
-  //     logo: "light",
-  //     metatags: [{ title: `Help Center` }],
-  //     enabled: true,
-  //     views: 0,
-  //     count: { categories: 0, articles: 0 },
-  //   },
-  //   {
-  //     id: "3",
-  //     createdAt: new Date(),
-  //     updatedAt: null,
-  //     slug: "ayuda",
-  //     title: "Centro de Ayuda",
-  //     description: "Tu descripción del centro de ayuda",
-  //     defaultLanguage: "es",
-  //     layout: "grid",
-  //     languages: ["es"],
-  //     links: [{ name: "Volver al sitio", href: "/" }],
-  //     color: Colors.TEAL,
-  //     logo: "dark",
-  //     metatags: [{ title: `Centro de Ayuda` }],
-  //     enabled: true,
-  //     views: 0,
-  //     count: { categories: 0, articles: 0 },
-  //   },
-  // ];
-  // return items.filter((f) => enabled === undefined || f.enabled === enabled);
 }
 
-async function get({ slug, enabled }: { slug: string; enabled?: boolean }): Promise<KnowledgeBaseDto> {
-  const item = await getKnowledgeBaseBySlug(slug);
+async function get({ slug, enabled, orgUuid }: { slug: string; enabled?: boolean, orgUuid: string }): Promise<KnowledgeBaseDto> {
+  
+  const item = await getKnowledgeBaseBySlug(slug, orgUuid);
   if (!item || (enabled !== undefined && item.enabled !== enabled)) {
     throw new Error("Knowledge base not found");
   }
   return kbToDto(item);
 }
 
-async function getById(id: string): Promise<KnowledgeBaseDto | null> {
-  const item = await getKnowledgeBaseById(id);
+async function getById(id: string, orgUuid: string): Promise<KnowledgeBaseDto | null> {
+  const item = await getKnowledgeBaseById(id, orgUuid);
   if (!item) {
     return null;
   }
@@ -98,6 +47,7 @@ async function getById(id: string): Promise<KnowledgeBaseDto | null> {
 function kbToDto(kb: KnowledgeBaseWithDetails) {
   const item: KnowledgeBaseDto = {
     id: kb.id,
+    orgUuid: kb.orgUuid,
     createdAt: kb.createdAt,
     updatedAt: kb.updatedAt,
     slug: kb.slug,
@@ -136,15 +86,18 @@ function kbToDto(kb: KnowledgeBaseWithDetails) {
 async function getCategories({
   kb,
   params,
+  orgUuid
 }: {
   kb: KnowledgeBaseDto;
   params: {
     lang?: string;
   };
+  orgUuid: string;
 }): Promise<KbCategoryDto[]> {
   const items = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: kb.slug,
     language: params.lang || kb.defaultLanguage,
+    orgUuid
   });
   return items.map((f) => categoryToDto({ kb, category: f, params }));
   // let allItems = await generateFakeData(kb);
@@ -214,6 +167,7 @@ async function getArticles({
   params: { lang?: string };
 }): Promise<KbArticleDto[]> {
   const items = await getAllKnowledgeBaseArticles({
+    orgUuid: kb.orgUuid,
     knowledgeBaseSlug: kb.slug,
     categoryId,
     language,
@@ -232,6 +186,7 @@ async function getArticle({ kb, slug, params }: { kb: KnowledgeBaseDto; slug: st
   let language = params.lang || kb.defaultLanguage;
   const item = await getKbArticleBySlug({
     knowledgeBaseId: kb.id,
+    orgUuid: kb.orgUuid,
     slug,
     language,
   });
@@ -317,6 +272,7 @@ function articleToDto({
       avatar: "https://avatars.githubusercontent.com/u/8606530?v=4",
     },
     publishedAt: article.publishedAt,
+    publishStatus: article.publishStatus,
     href: KnowledgeBaseUtils.getArticleUrl({ kb, article, params }),
     sectionId: article.sectionId,
     relatedArticles: relatedArticles.map((f) => ({
@@ -558,8 +514,11 @@ async function del(item: KnowledgeBaseDto) {
   if (categoriesCount > 0) {
     throw new Error("Cannot delete knowledge base with categories");
   }
-  return await db.knowledgeBase.delete({
+  return await db.knowledgeBase.update({
     where: { id: item.id },
+    data: {
+      isDeleted: true
+    }
   });
 }
 
@@ -567,6 +526,7 @@ async function duplicateCategory({ kb, language, categoryId }: { kb: KnowledgeBa
   const allCategories = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: kb.slug,
     language,
+    orgUuid: kb.orgUuid,
   });
   const existing = allCategories.find((p) => p.id === categoryId);
   if (!existing) {
@@ -597,6 +557,7 @@ async function duplicateCategory({ kb, language, categoryId }: { kb: KnowledgeBa
   }
 
   const item = await createKnowledgeBaseCategory({
+    uuid: uuidv4(),
     knowledgeBaseId: kb.id,
     slug,
     order: maxOrder + 1,
@@ -612,6 +573,7 @@ async function duplicateCategory({ kb, language, categoryId }: { kb: KnowledgeBa
 async function duplicateArticle({ kb, language, articleId }: { kb: KnowledgeBaseDto; language: string; articleId: string }) {
   const allArticles = await getAllKnowledgeBaseArticles({
     knowledgeBaseSlug: kb.slug,
+    orgUuid: kb.orgUuid,
     language,
   });
 
@@ -627,6 +589,8 @@ async function duplicateArticle({ kb, language, articleId }: { kb: KnowledgeBase
 
   const item = await createKnowledgeBaseArticle({
     knowledgeBaseId: kb.id,
+    uuid: uuidv4(),
+    createdBy: existing.createdBy,
     categoryId: existing.categoryId,
     sectionId: existing.sectionId,
     slug,

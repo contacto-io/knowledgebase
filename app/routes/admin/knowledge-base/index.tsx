@@ -1,4 +1,4 @@
-import type { V2_MetaFunction } from "@remix-run/node";
+import type { LoaderFunction, V2_MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type { MetaTagsDto } from "~/application/dtos/seo/MetaTagsDto";
@@ -11,6 +11,7 @@ import {
 import { countKnowledgeBaseArticles } from "~/modules/knowledgeBase/db/kbArticles.db.server";
 import { countKnowledgeBaseCategories } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { countKnowledgeBases } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import NumberUtils from "~/utils/shared/NumberUtils";
 
 type LoaderData = {
@@ -25,13 +26,16 @@ type LoaderData = {
     articlesDownvotes: number;
   };
 };
-export let loader = async () => {
+export let loader: LoaderFunction = async ({request, context}) => {
+  await authenticateClientV2({request, context, params:{}})
+  const orgUuid = context['org_uuid'] as string;
+
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
     summary: {
-      kbsTotal: await countKnowledgeBases(),
-      articlesTotal: await countKnowledgeBaseArticles(),
-      categoriesTotal: await countKnowledgeBaseCategories(),
+      kbsTotal: await countKnowledgeBases(orgUuid),
+      articlesTotal: await countKnowledgeBaseArticles(orgUuid),
+      categoriesTotal: await countKnowledgeBaseCategories(orgUuid),
       kbsViews: await countAllKbsViews(),
       articlesViews: await countAllKbsArticleViews(),
       articlesUpvotes: await countAllKbsArticleUpvotes(),

@@ -14,6 +14,7 @@ import {
 import { getAllKnowledgeBaseCategories } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import { KnowledgeBaseCategoryWithDetails } from "~/modules/knowledgeBase/helpers/KbCategoryModelHelper";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
@@ -22,9 +23,13 @@ type LoaderData = {
   item: KnowledgeBaseArticleWithDetails;
   categories: KnowledgeBaseCategoryWithDetails[];
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ request, context, params }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   if (!knowledgeBase) {
     return redirect("/admin/knowledge-base/bases");
@@ -36,6 +41,7 @@ export let loader = async ({ params }: LoaderArgs) => {
   const categories = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: knowledgeBase.slug,
     language: params.lang!,
+    orgUuid: knowledgeBase.orgUuid,
   });
   const data: LoaderData = {
     knowledgeBase,
@@ -45,12 +51,16 @@ export let loader = async ({ params }: LoaderArgs) => {
   return json(data);
 };
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, context, params }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString() ?? "";
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
-  const kb = await KnowledgeBaseService.get({ slug: params.slug! });
+  const kb = await KnowledgeBaseService.get({ slug: params.slug!, orgUuid });
   const item = await getKbArticleById(params.id!);
   if (!item) {
     return json({ error: "Article not found" }, { status: 400 });
@@ -69,6 +79,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       knowledgeBaseId: kb.id,
       slug,
       language: params.lang!,
+      orgUuid: kb.orgUuid,
     });
     if (existing && existing.id !== item.id) {
       return json({ error: "Slug already exists" }, { status: 400 });
@@ -92,6 +103,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     }
 
     await updateKnowledgeBaseArticle(item.id, {
+      updatedBy: aomUuid,
       categoryId: categoryId?.length ? categoryId : null,
       sectionId: sectionId?.length ? sectionId : null,
       slug,
@@ -106,7 +118,7 @@ export const action = async ({ request, params }: ActionArgs) => {
 
     return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${item.id}`);
   } else if (action === "delete") {
-    await deleteKnowledgeBaseArticle(item.id);
+    await deleteKnowledgeBaseArticle(item.id, aomUuid);
     return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}`);
   }
   return json({ error: "Invalid action" }, { status: 400 });

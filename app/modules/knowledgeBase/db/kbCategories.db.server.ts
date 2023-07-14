@@ -14,14 +14,17 @@ const include = {
 export async function getAllKnowledgeBaseCategories({
   knowledgeBaseSlug,
   language,
+  orgUuid
 }: {
   knowledgeBaseSlug: string;
   language: string | undefined;
+  orgUuid: string
 }): Promise<KnowledgeBaseCategoryWithDetails[]> {
   return await db.knowledgeBaseCategory.findMany({
     where: {
-      knowledgeBase: { slug: knowledgeBaseSlug },
+      knowledgeBase: { slug: knowledgeBaseSlug, orgUuid, isDeleted: false },
       language,
+      isDeleted: false
     },
     include,
     orderBy: { order: "asc" },
@@ -29,8 +32,8 @@ export async function getAllKnowledgeBaseCategories({
 }
 
 export async function getKbCategoryById(id: string): Promise<KnowledgeBaseCategoryWithDetails | null> {
-  return await db.knowledgeBaseCategory.findUnique({
-    where: { id },
+  return await db.knowledgeBaseCategory.findFirst({
+    where: { id, isDeleted: false },
     include,
   });
 }
@@ -48,6 +51,7 @@ export async function getKbCategoryBySlug({
     knowledgeBaseId,
     slug,
     language,
+    isDeleted: false
   };
   return await db.knowledgeBaseCategory.findFirst({
     where,
@@ -56,6 +60,7 @@ export async function getKbCategoryBySlug({
 }
 
 export async function createKnowledgeBaseCategory(data: {
+  uuid: string;
   knowledgeBaseId: string;
   slug: string;
   order: number;
@@ -68,6 +73,7 @@ export async function createKnowledgeBaseCategory(data: {
   return await db.knowledgeBaseCategory.create({
     data: {
       knowledgeBaseId: data.knowledgeBaseId,
+      uuid: data.uuid,
       slug: data.slug,
       order: data.order,
       title: data.title,
@@ -107,11 +113,16 @@ export async function updateKnowledgeBaseCategory(
 }
 
 export async function deleteKnowledgeBaseCategory(id: string) {
-  return await db.knowledgeBaseCategory.delete({
+  return await db.knowledgeBaseCategory.update({
     where: { id },
+    data: { isDeleted: true }
   });
 }
 
-export async function countKnowledgeBaseCategories() {
-  return await db.knowledgeBaseCategory.count();
+export async function countKnowledgeBaseCategories(orgUuid: string) {
+  return await db.knowledgeBaseCategory.count({
+    where: {
+      knowledgeBase: { orgUuid }
+    }
+  });
 }

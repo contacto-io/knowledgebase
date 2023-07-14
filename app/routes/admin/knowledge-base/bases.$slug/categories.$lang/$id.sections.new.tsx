@@ -1,11 +1,13 @@
 import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node";
 import { useParams } from "@remix-run/react";
 import { useTypedLoaderData } from "remix-typedjson";
+import { v4 as uuuidv4 } from "uuid";
 import KbCategorySectionForm from "~/modules/knowledgeBase/components/bases/KbCategorySectionForm";
 import { getKbCategoryById } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { createKnowledgeBaseCategorySection } from "~/modules/knowledgeBase/db/kbCategorySections.db.server";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
 import { KnowledgeBaseCategoryWithDetails } from "~/modules/knowledgeBase/helpers/KbCategoryModelHelper";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
@@ -13,10 +15,15 @@ type LoaderData = {
   knowledgeBase: KnowledgeBaseDto;
   category: KnowledgeBaseCategoryWithDetails;
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ params, context, request }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
+
   const category = await getKbCategoryById(params.id!);
   if (!category) {
     return redirect(`/admin/knowledge-base/bases/${params.slug}/categories/${params.lang}`);
@@ -28,7 +35,9 @@ export let loader = async ({ params }: LoaderArgs) => {
   return json(data);
 };
 
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -50,6 +59,7 @@ export const action = async ({ request, params }: ActionArgs) => {
     try {
       await createKnowledgeBaseCategorySection({
         categoryId: category.id,
+        uuid: uuuidv4(),
         order: maxOrder + 1,
         title,
         description,

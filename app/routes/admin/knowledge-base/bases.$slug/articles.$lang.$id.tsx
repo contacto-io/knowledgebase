@@ -10,6 +10,7 @@ import KbArticleContent from "~/modules/knowledgeBase/components/articles/KbArti
 import { getKbArticleById, updateKnowledgeBaseArticle } from "~/modules/knowledgeBase/db/kbArticles.db.server";
 import { KbArticleDto } from "~/modules/knowledgeBase/dtos/KbArticleDto";
 import { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBaseDto";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 import KnowledgeBaseService from "~/modules/knowledgeBase/service/KnowledgeBaseService";
 
@@ -17,9 +18,13 @@ type LoaderData = {
   knowledgeBase: KnowledgeBaseDto;
   item: KbArticleDto;
 };
-export let loader = async ({ params }: LoaderArgs) => {
+export let loader = async ({ params, context, request }: LoaderArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const knowledgeBase = await KnowledgeBaseService.get({
     slug: params.slug!,
+    orgUuid
   });
   if (!knowledgeBase) {
     return redirect("/admin/knowledge-base/bases");
@@ -41,7 +46,11 @@ export let loader = async ({ params }: LoaderArgs) => {
 type ActionData = {
   error?: string;
 };
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+  const aomUuid = request.headers.get("AOM_UUID") as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString() ?? "";
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -57,16 +66,21 @@ export const action = async ({ request, params }: ActionArgs) => {
     }
     let publishedAt = item.publishedAt;
     let contentPublished = item.contentPublished;
+    let publishStatus = item.publishStatus;
     if (item.publishedAt) {
       publishedAt = null;
+      publishStatus = 'draft';
     } else {
       publishedAt = new Date();
       contentPublished = item.contentDraft;
+      publishStatus = "user_published";
     }
 
     await updateKnowledgeBaseArticle(item.id, {
       publishedAt,
       contentPublished,
+      publishStatus,
+      updatedBy: aomUuid,
     });
 
     return json({ success: true });

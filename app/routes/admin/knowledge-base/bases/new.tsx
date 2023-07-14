@@ -1,17 +1,22 @@
 import { ActionArgs, json, redirect } from "@remix-run/node";
 import { useSubmit } from "@remix-run/react";
 import { useTypedActionData } from "remix-typedjson";
+import { v4 as uuidv4 } from 'uuid';
 import ActionResultModal from "~/components/ui/modals/ActionResultModal";
 import KnowledgeBaseForm from "~/modules/knowledgeBase/components/bases/KnowledgeBaseForm";
 import { createKnowledgeBase, getKnowledgeBaseBySlug } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
 import { KbNavLinkDto } from "~/modules/knowledgeBase/dtos/KbNavLinkDto";
+import { authenticateClientV2 } from "~/modules/knowledgeBase/service/CoreService";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
 
 type ActionData = {
   error?: string;
   success?: string;
 };
-export const action = async ({ request, params }: ActionArgs) => {
+export const action = async ({ request, params, context }: ActionArgs) => {
+  await authenticateClientV2({request, context, params});
+  const orgUuid = context['org_uuid'] as string;
+
   const form = await request.formData();
   const action = form.get("action")?.toString();
   await KnowledgeBasePermissionsService.hasPermission({ action });
@@ -31,13 +36,17 @@ export const action = async ({ request, params }: ActionArgs) => {
     if (languages.length === 0) {
       return json({ error: "At least one language is required" }, { status: 400 });
     }
-    const existing = await getKnowledgeBaseBySlug(slug);
+    const existing = await getKnowledgeBaseBySlug(slug, orgUuid);
     if (existing) {
       return json({ error: "Slug already exists" }, { status: 400 });
     }
+    
+    const uuid = uuidv4();
 
     try {
       await createKnowledgeBase({
+        uuid,
+        orgUuid,
         slug,
         title,
         description,

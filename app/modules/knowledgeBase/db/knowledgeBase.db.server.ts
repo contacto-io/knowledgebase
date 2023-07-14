@@ -13,30 +13,34 @@ const include = {
   _count: {
     select: { categories: true, articles: true, views: true },
   },
+
+  
 };
 
-export async function getAllKnowledgeBases({ enabled }: { enabled?: boolean } = {}): Promise<KnowledgeBaseWithDetails[]> {
+export async function getAllKnowledgeBases({ enabled, orgUuid }: { enabled?: boolean, orgUuid?: string } = {}): Promise<KnowledgeBaseWithDetails[]> {
   return await db.knowledgeBase.findMany({
-    where: { enabled },
+    where: { enabled, orgUuid, isDeleted: false },
+    include
+  });
+}
+
+export async function getKnowledgeBaseById(id: string, orgUuid: string): Promise<KnowledgeBaseWithDetails | null> {
+  return await db.knowledgeBase.findFirst({
+    where: { id, isDeleted: false, orgUuid },
     include,
   });
 }
 
-export async function getKnowledgeBaseById(id: string): Promise<KnowledgeBaseWithDetails | null> {
-  return await db.knowledgeBase.findUnique({
-    where: { id },
-    include,
-  });
-}
-
-export async function getKnowledgeBaseBySlug(slug: string): Promise<KnowledgeBaseWithDetails | null> {
-  return await db.knowledgeBase.findUnique({
-    where: { slug },
+export async function getKnowledgeBaseBySlug(slug: string, orgUuid: string): Promise<KnowledgeBaseWithDetails | null> {
+  return await db.knowledgeBase.findFirst({
+    where: { slug, orgUuid, isDeleted: false },
     include,
   });
 }
 
 export async function createKnowledgeBase(data: {
+  uuid: string;
+  orgUuid: string;
   slug: string;
   title: string;
   description: string;
@@ -51,6 +55,8 @@ export async function createKnowledgeBase(data: {
 }) {
   return await db.knowledgeBase.create({
     data: {
+      uuid: data.uuid,
+      orgUuid: data.orgUuid,
       slug: data.slug,
       title: data.title,
       description: data.description,
@@ -106,6 +112,8 @@ export async function deleteKnowledgeBase(id: string) {
   });
 }
 
-export async function countKnowledgeBases() {
-  return await db.knowledgeBase.count();
+export async function countKnowledgeBases(orgUuid: string) {
+  return await db.knowledgeBase.count({
+    where: { orgUuid }
+  });
 }

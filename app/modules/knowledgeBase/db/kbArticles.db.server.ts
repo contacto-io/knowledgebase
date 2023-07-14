@@ -32,16 +32,20 @@ export async function getAllKnowledgeBaseArticles({
   knowledgeBaseSlug,
   categoryId,
   language,
+  orgUuid
 }: {
   knowledgeBaseSlug: string;
   categoryId?: string;
   language: string | undefined;
+  orgUuid: string;
 }): Promise<KnowledgeBaseArticleWithDetails[]> {
   return await db.knowledgeBaseArticle.findMany({
     where: {
-      knowledgeBase: { slug: knowledgeBaseSlug },
+      knowledgeBase: { slug: knowledgeBaseSlug, orgUuid, isDeleted: false },
+      // category: { isDeleted: false },
       categoryId,
       language,
+      isDeleted: false,
     },
     include,
     orderBy: [
@@ -60,11 +64,13 @@ export async function getAllKnowledgeBaseArticles({
 
 export async function getAllKnowledgeBaseArticlesWithPagination({
   knowledgeBaseSlug,
+  orgUuid,
   language,
   pagination,
   filters,
 }: {
   knowledgeBaseSlug: string;
+  orgUuid: string;
   language: string | undefined;
   pagination: {
     page: number;
@@ -80,8 +86,9 @@ export async function getAllKnowledgeBaseArticlesWithPagination({
   pagination: PaginationDto;
 }> {
   const where: Prisma.KnowledgeBaseArticleWhereInput = {
-    knowledgeBase: { slug: knowledgeBaseSlug },
+    knowledgeBase: { slug: knowledgeBaseSlug, orgUuid },
     language,
+    isDeleted: false,
   };
   if (filters.title !== undefined) {
     where.title = { contains: filters.title };
@@ -133,44 +140,40 @@ export async function getFeaturedKnowledgeBaseArticles({
 }
 
 export async function getKbArticleById(id: string): Promise<KnowledgeBaseArticleWithDetails | null> {
-  return await db.knowledgeBaseArticle.findUnique({
-    where: { id },
+  return await db.knowledgeBaseArticle.findFirst({
+    where: { id, isDeleted: false },
     include,
   });
 }
 
 export async function getKbArticleBySlug({
   knowledgeBaseId,
+  orgUuid,
   slug,
   language,
 }: {
   knowledgeBaseId: string;
+  orgUuid: string;
   slug: string;
   language: string;
 }): Promise<KnowledgeBaseArticleWithDetails | null> {
   return await db.knowledgeBaseArticle.findFirst({
     where: {
       knowledgeBaseId,
+      knowledgeBase: { orgUuid, isDeleted: false },
       slug,
       language,
+      isDeleted: false,
     },
     include: {
       ...include,
-      // category: {
-      //   include: {
-      //     articles: {
-      //       select: { id: true, order: true, title: true, description: true, slug: true, language: true, sectionId: true, publishedAt: true },
-      //     },
-      //     sections: {
-      //       select: { id: true, order: true, title: true, description: true },
-      //     },
-      //   },
-      // },
     },
   });
 }
 
 export async function createKnowledgeBaseArticle(data: {
+  uuid: string;
+  createdBy: string;
   knowledgeBaseId: string;
   categoryId: string | null;
   sectionId: string | null;
@@ -189,6 +192,10 @@ export async function createKnowledgeBaseArticle(data: {
 }) {
   return await db.knowledgeBaseArticle.create({
     data: {
+      uuid: data.uuid,
+      createdBy: data.createdBy,
+      updatedBy: data.createdBy,
+      publishStatus: "draft",
       knowledgeBaseId: data.knowledgeBaseId,
       categoryId: data.categoryId,
       sectionId: data.sectionId,
@@ -211,6 +218,8 @@ export async function createKnowledgeBaseArticle(data: {
 export async function updateKnowledgeBaseArticle(
   id: string,
   data: {
+    updatedBy: string;
+    publishStatus?: string;
     categoryId?: string | null;
     sectionId?: string | null;
     slug?: string;
@@ -230,6 +239,8 @@ export async function updateKnowledgeBaseArticle(
   return await db.knowledgeBaseArticle.update({
     where: { id },
     data: {
+      updatedBy: data.updatedBy,
+      publishStatus: data.publishStatus,
       categoryId: data.categoryId,
       sectionId: data.sectionId,
       slug: data.slug,
@@ -248,12 +259,17 @@ export async function updateKnowledgeBaseArticle(
   });
 }
 
-export async function deleteKnowledgeBaseArticle(id: string) {
-  return await db.knowledgeBaseArticle.delete({
+export async function deleteKnowledgeBaseArticle(id: string, updatedBy: string) {
+  return await db.knowledgeBaseArticle.update({
     where: { id },
+    data: { isDeleted: true, updatedBy }
   });
 }
 
-export async function countKnowledgeBaseArticles() {
-  return await db.knowledgeBaseArticle.count();
+export async function countKnowledgeBaseArticles(orgUuid: string) {
+  return await db.knowledgeBaseArticle.count({
+    where: {
+      knowledgeBase: { isDeleted: false, orgUuid }
+    }
+  });
 }

@@ -4,6 +4,7 @@ import { KbNavLinkDto } from "./KbNavLinkDto";
 
 export type KnowledgeBaseDto = {
   id: string;
+  orgUuid: string;
   createdAt: Date;
   updatedAt: Date | null;
   slug: string;
