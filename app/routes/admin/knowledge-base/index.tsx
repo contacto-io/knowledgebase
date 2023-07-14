@@ -1,4 +1,4 @@
-import type { V2_MetaFunction } from "@remix-run/node";
+import type { LoaderFunction, V2_MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type { MetaTagsDto } from "~/application/dtos/seo/MetaTagsDto";
@@ -12,6 +12,7 @@ import { countKnowledgeBaseArticles } from "~/modules/knowledgeBase/db/kbArticle
 import { countKnowledgeBaseCategories } from "~/modules/knowledgeBase/db/kbCategories.db.server";
 import { countKnowledgeBases } from "~/modules/knowledgeBase/db/knowledgeBase.db.server";
 import NumberUtils from "~/utils/shared/NumberUtils";
+import Cookies from 'universal-cookie';
 
 type LoaderData = {
   metatags: MetaTagsDto;
@@ -25,7 +26,10 @@ type LoaderData = {
     articlesDownvotes: number;
   };
 };
-export let loader = async () => {
+export let loader: LoaderFunction = async ({ request }) => {
+  const cookieStr = request.headers.get('cookie')
+  const cookie = new Cookies(cookieStr)
+  console.log('auth data : ', cookie.get('xAuth'))
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
     summary: {

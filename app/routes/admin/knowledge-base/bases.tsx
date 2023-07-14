@@ -16,6 +16,7 @@ import ButtonSecondary from "~/components/ui/buttons/ButtonSecondary";
 import KnowledgeBaseTemplatesService from "~/modules/knowledgeBase/service/KnowledgeBaseTemplatesService";
 import { KnowledgeBasesTemplateDto } from "~/modules/knowledgeBase/dtos/KnowledgeBasesTemplateDto";
 import KnowledgeBasePermissionsService from "~/modules/knowledgeBase/service/KnowledgeBasePermissionsService";
+import Cookies from "universal-cookie";
 
 type LoaderData = {
   metatags: MetaTagsDto;
@@ -23,6 +24,10 @@ type LoaderData = {
   template: KnowledgeBasesTemplateDto;
 };
 export let loader: LoaderFunction = async ({ request }) => {
+  const cookieStr = request.headers.get('cookie')
+  console.log('COOKIE STR  : ', cookieStr)
+  const cookie = new Cookies(cookieStr)
+  console.log('auth data BASES : ', cookie.get('xAuth'))
   const data: LoaderData = {
     metatags: [{ title: `Knowledge Base` }],
     items: await KnowledgeBaseService.getAll({}),
