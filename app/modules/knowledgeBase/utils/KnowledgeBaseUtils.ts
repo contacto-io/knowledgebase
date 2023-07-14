@@ -3,7 +3,7 @@ import { KnowledgeBaseDto } from "../dtos/KnowledgeBaseDto";
 
 const supportedLanguages: { name: string; value: string }[] = [
   { name: "English", value: "en" },
-  { name: "Spanish", value: "es" },
+  // { name: "Spanish", value: "es" },
 ];
 
 function getLanguageName(language: string) {
