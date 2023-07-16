@@ -9,18 +9,23 @@ import type { KnowledgeBaseDto } from "~/modules/knowledgeBase/dtos/KnowledgeBas
 import KbCategory from "~/modules/knowledgeBase/components/categories/KbCategory";
 import type { MetaTagsDto } from "~/application/dtos/seo/MetaTagsDto";
 import KnowledgeBaseUtils from "~/modules/knowledgeBase/utils/KnowledgeBaseUtils";
+import { KbArticleDto } from "~/modules/knowledgeBase/dtos/KbArticleDto";
 
 type LoaderData = {
   metatags?: MetaTagsDto;
   item: KbCategoryDto | null;
   kb: KnowledgeBaseDto;
   language: string;
+  articles: KbArticleDto[];
   allCategories: KbCategoryDto[];
 };
 export let loader = async ({ request, params }: LoaderArgs) => {
+  console.log(params)
   const kb = await KnowledgeBaseService.get({ slug: params.slug!, enabled: true });
   const language = params.lang ?? kb.defaultLanguage;
-
+  const searchParams = new URL(request.url).searchParams;
+  const query = searchParams.get("q")?.toString();
+  console.log(query)
   const item = await KnowledgeBaseService.getCategory({
     kb,
     category: params.category ?? "",
@@ -30,10 +35,25 @@ export let loader = async ({ request, params }: LoaderArgs) => {
   if (!item) {
     return redirect(KnowledgeBaseUtils.getKbUrl({ kb, params }));
   }
+  const answer = await KnowledgeBaseService.getArticles({
+    kb,
+    categoryId: item.id,
+    language,
+    query,
+    params,
+  });
+  console.log(answer)
   const data: LoaderData = {
     metatags: item?.metatags,
     kb,
     item,
+    articles: await KnowledgeBaseService.getArticles({
+      kb,
+      categoryId: item.id,
+      language,
+      query,
+      params,
+    }),
     allCategories: await KnowledgeBaseService.getCategories({
       kb,
       params,

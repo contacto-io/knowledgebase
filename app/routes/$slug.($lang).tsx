@@ -34,6 +34,7 @@ export let loader = async ({ request, params }: LoaderArgs) => {
     categories: await KnowledgeBaseService.getCategories({
       kb,
       params,
+      query,
     }),
     featured: await KnowledgeBaseService.getFeaturedArticles({
       kb,
@@ -42,6 +43,25 @@ export let loader = async ({ request, params }: LoaderArgs) => {
     query,
     // searchResult,
   };
+  // const queryarticle = await KnowledgeBaseService.getArticles({
+  //   kb,
+  //   params,
+  //   query
+  // })
+  const querycategory = await KnowledgeBaseService.getCategories({
+    kb,
+    params,
+    query
+  })
+  console.log(querycategory)
+  // findcategories = getCategories({
+  //   kb,
+  //   categoryId,
+  //   language,
+  //   query,
+  //   params,
+  // }) 
+  // console.log(data);
   return defer(data);
 };
 

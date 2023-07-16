@@ -11,6 +11,26 @@ const include = {
   },
 };
 
+export async function searchKnowledgeBaseCategories({
+  knowledgeBaseSlug,
+  language,
+  query,
+}: {
+  knowledgeBaseSlug: string;
+  language: string | undefined;
+  query?: string;
+}): Promise<KnowledgeBaseCategoryWithDetails[]> {
+  return await db.knowledgeBaseCategory.findMany({
+    where: {
+      knowledgeBase: { slug: knowledgeBaseSlug },
+      language,
+      title : {contains: query},
+    },
+    include,
+    orderBy: { order: "asc" },
+  });
+}
+
 export async function getAllKnowledgeBaseCategories({
   knowledgeBaseSlug,
   language,

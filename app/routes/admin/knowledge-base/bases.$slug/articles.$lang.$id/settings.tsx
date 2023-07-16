@@ -33,6 +33,16 @@ export let loader = async ({ params }: LoaderArgs) => {
   if (!item) {
     return redirect(`/admin/knowledge-base/bases/${params.slug!}/articles`);
   }
+  if(item.editLock === false)
+  {
+    await updateKnowledgeBaseArticle(item.id, {
+      editLock: true,
+    });
+  }
+  else 
+  {
+    throw new Error("Someone is already editing!");
+  }
   const categories = await getAllKnowledgeBaseCategories({
     knowledgeBaseSlug: knowledgeBase.slug,
     language: params.lang!,
@@ -48,6 +58,7 @@ export let loader = async ({ params }: LoaderArgs) => {
 export const action = async ({ request, params }: ActionArgs) => {
   const form = await request.formData();
   const action = form.get("action")?.toString() ?? "";
+  
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
   const kb = await KnowledgeBaseService.get({ slug: params.slug! });
@@ -102,10 +113,15 @@ export const action = async ({ request, params }: ActionArgs) => {
       featuredOrder,
       author: "",
       seoImage,
+      editLock: false,
     });
-
     return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${item.id}`);
-  } else if (action === "delete") {
+  } else if (action === "close") {
+    await updateKnowledgeBaseArticle(item.id, {
+      editLock: false,
+    });
+  } 
+  else if (action === "delete") {
     await deleteKnowledgeBaseArticle(item.id);
     return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}`);
   }

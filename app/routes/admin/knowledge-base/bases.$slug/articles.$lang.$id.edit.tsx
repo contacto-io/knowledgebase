@@ -28,6 +28,16 @@ export let loader = async ({ params }: LoaderArgs) => {
   if (!item) {
     return redirect(`/admin/knowledge-base/bases/${params.slug!}/articles`);
   }
+  if(item.editLock === false)
+  {
+    await updateKnowledgeBaseArticle(item.id, {
+      editLock: true,
+    });
+  }
+  else 
+  {
+    throw new Error("Someone is already editing!");
+  }
   const data: LoaderData = {
     knowledgeBase,
     item,
@@ -44,6 +54,7 @@ export const action = async ({ request, params }: ActionArgs) => {
   await KnowledgeBasePermissionsService.hasPermission({ action });
 
   const item = await getKbArticleById(params.id!);
+  console.log('params.id');
   if (!item) {
     return json({ error: "Article not found" }, { status: 400 });
   }
@@ -55,9 +66,16 @@ export const action = async ({ request, params }: ActionArgs) => {
     await updateKnowledgeBaseArticle(item.id, {
       contentDraft: content,
       contentType,
+      editLock: false,
     });
 
     return redirect(`/admin/knowledge-base/bases/${params.slug}/articles/${params.lang}/${params.id}`);
+  }
+  else if(action === "cancel")
+  {
+    await updateKnowledgeBaseArticle(item.id, {
+      editLock: false,
+    });
   }
   return json({ error: "Invalid action" }, { status: 400 });
 };

@@ -127,6 +127,7 @@ export const action = async ({ request, params }: ActionArgs) => {
       author: "",
       seoImage: "",
       publishedAt: null,
+      editLock: false,
     });
     return redirect(`/admin/knowledge-base/bases/${kb.slug}/articles/${params.lang}/${created.id}/edit`);
   } else if (action === "set-orders") {
@@ -205,6 +206,11 @@ export default function () {
   const navigate = useNavigate();
   const submit = useSubmit();
 
+  // function onSettings(item: KnowledgeBaseArticleWithDetails) {
+  //   const giveAccess = getKbArticleById(item.id!);
+
+  // }
+
   function onDuplicate(item: KnowledgeBaseArticleWithDetails) {
     const form = new FormData();
     form.set("action", "duplicate");
@@ -257,6 +263,8 @@ export default function () {
             {
               title: "Settings",
               onClickRoute: (_, item) => `${item.id}/settings`,
+              
+              // const giveAccess = await getKbArticleById(item.id!),
             },
             {
               title: "Duplicate",

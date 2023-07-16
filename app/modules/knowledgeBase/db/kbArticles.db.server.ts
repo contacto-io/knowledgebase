@@ -28,6 +28,39 @@ const include = {
   },
 };
 
+export async function searchKnowledgeBaseArticles({
+  knowledgeBaseSlug,
+  categoryId,
+  language,
+  query, 
+}: {
+  knowledgeBaseSlug: string;
+  categoryId?: string;
+  language: string | undefined;
+  query?: string;
+}): Promise<KnowledgeBaseArticleWithDetails[]> {
+  return await db.knowledgeBaseArticle.findMany({
+    where: {
+      knowledgeBase: { slug: knowledgeBaseSlug },
+      categoryId : categoryId ? { equals: categoryId } : undefined,
+      language: language,
+      title: {contains : query },
+    },
+    include,
+    orderBy: [
+      {
+        category: { order: "asc" },
+      },
+      {
+        section: { order: "asc" },
+      },
+      {
+        order: "asc",
+      },
+    ],
+  });
+}
+
 export async function getAllKnowledgeBaseArticles({
   knowledgeBaseSlug,
   categoryId,
@@ -40,8 +73,8 @@ export async function getAllKnowledgeBaseArticles({
   return await db.knowledgeBaseArticle.findMany({
     where: {
       knowledgeBase: { slug: knowledgeBaseSlug },
-      categoryId,
-      language,
+      categoryId: categoryId ? { equals: categoryId } : undefined,
+      language: language,
     },
     include,
     orderBy: [
@@ -186,6 +219,7 @@ export async function createKnowledgeBaseArticle(data: {
   author: string;
   seoImage: string;
   publishedAt: Date | null;
+  editLock: boolean;
 }) {
   return await db.knowledgeBaseArticle.create({
     data: {
@@ -204,6 +238,7 @@ export async function createKnowledgeBaseArticle(data: {
       author: data.author,
       seoImage: data.seoImage,
       publishedAt: data.publishedAt,
+      editLock: data.editLock,
     },
   });
 }
@@ -225,6 +260,7 @@ export async function updateKnowledgeBaseArticle(
     author?: string;
     seoImage?: string;
     publishedAt?: Date | null;
+    editLock?: boolean;
   }
 ) {
   return await db.knowledgeBaseArticle.update({
@@ -244,6 +280,7 @@ export async function updateKnowledgeBaseArticle(
       author: data.author,
       seoImage: data.seoImage,
       publishedAt: data.publishedAt,
+      editLock: data.editLock,
     },
   });
 }

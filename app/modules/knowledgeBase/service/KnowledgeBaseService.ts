@@ -9,11 +9,12 @@ import {
   KnowledgeBaseArticleWithDetails,
   createKnowledgeBaseArticle,
   getAllKnowledgeBaseArticles,
+  searchKnowledgeBaseArticles,
   getFeaturedKnowledgeBaseArticles,
   getKbArticleById,
   getKbArticleBySlug,
 } from "../db/kbArticles.db.server";
-import { createKnowledgeBaseCategory, getAllKnowledgeBaseCategories, getKbCategoryById, getKbCategoryBySlug } from "../db/kbCategories.db.server";
+import { createKnowledgeBaseCategory, getAllKnowledgeBaseCategories, searchKnowledgeBaseCategories, getKbCategoryById, getKbCategoryBySlug } from "../db/kbCategories.db.server";
 import KnowledgeBaseUtils from "../utils/KnowledgeBaseUtils";
 import { KnowledgeBaseCategoryWithDetails } from "../helpers/KbCategoryModelHelper";
 
@@ -136,16 +137,33 @@ function kbToDto(kb: KnowledgeBaseWithDetails) {
 async function getCategories({
   kb,
   params,
+  query,
 }: {
   kb: KnowledgeBaseDto;
   params: {
     lang?: string;
   };
+  query?: string;
 }): Promise<KbCategoryDto[]> {
-  const items = await getAllKnowledgeBaseCategories({
-    knowledgeBaseSlug: kb.slug,
-    language: params.lang || kb.defaultLanguage,
-  });
+  let items: KnowledgeBaseCategoryWithDetails[] ;
+  if (query?.trim() !== '') {
+    // Search for categories with the query in their name
+    items = await searchKnowledgeBaseCategories({
+      knowledgeBaseSlug: kb.slug,
+      language: params.lang || kb.defaultLanguage,
+      query: query,
+    });
+  } else {
+    // Retrieve all categories
+    items = await getAllKnowledgeBaseCategories({
+      knowledgeBaseSlug: kb.slug,
+      language: params.lang || kb.defaultLanguage,
+    });
+  }
+  // const items = await getAllKnowledgeBaseCategories({
+  //   knowledgeBaseSlug: kb.slug,
+  //   language: params.lang || kb.defaultLanguage,
+  // });
   return items.map((f) => categoryToDto({ kb, category: f, params }));
   // let allItems = await generateFakeData(kb);
   // allItems.categories = allItems.categories.filter((f) => f.language === language);
@@ -210,14 +228,30 @@ async function getArticles({
   kb: KnowledgeBaseDto;
   categoryId: string;
   language: string;
-  query: string | undefined;
+  query?: string | undefined;
   params: { lang?: string };
 }): Promise<KbArticleDto[]> {
-  const items = await getAllKnowledgeBaseArticles({
+let items: KnowledgeBaseArticleWithDetails[];
+if (query?.trim() !== '') {
+  // Search for categories with the query in their name
+  items = await searchKnowledgeBaseArticles({ 
     knowledgeBaseSlug: kb.slug,
-    categoryId,
-    language,
+    categoryId: categoryId,
+    language: params.lang || kb.defaultLanguage,
+    query: query,
   });
+} else {
+  // Retrieve all categories
+  items = await getAllKnowledgeBaseArticles({
+    knowledgeBaseSlug: kb.slug,
+    language: params.lang || kb.defaultLanguage,
+  });
+}
+  // const items = await getAllKnowledgeBaseArticles({
+  //   knowledgeBaseSlug: kb.slug,
+  //   categoryId,
+  //   language,
+  // });
   return items.map((f) => articleToDto({ kb, article: f, relatedArticles: f.relatedArticles, params }));
   // let allItems = await generateFakeData(kb);
   // allItems.articles = allItems.articles.filter((f) => f.language === language);
@@ -641,6 +675,7 @@ async function duplicateArticle({ kb, language, articleId }: { kb: KnowledgeBase
     author: existing.author,
     seoImage: existing.seoImage,
     publishedAt: null,
+    editLock: false,
   });
   return item;
 }

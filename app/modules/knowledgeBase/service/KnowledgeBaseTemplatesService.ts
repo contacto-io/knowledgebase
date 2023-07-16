@@ -237,6 +237,7 @@ async function importKbs(template: KnowledgeBasesTemplateDto) {
           author: "", // TODO
           seoImage: article.seoImage,
           publishedAt: article.publishedAt ? new Date(article.publishedAt) : null,
+          editLock: false,
         });
         created.articles++;
       }
