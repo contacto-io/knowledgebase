@@ -127,7 +127,7 @@ export default function CampaignsListRoute() {
         <div className="flex space-x-1">
           {/* <ButtonSecondary to="import">Import</ButtonSecondary>
           <ButtonSecondary onClick={onExport}>Export</ButtonSecondary> */}
-          {data?.items?.length && <ButtonPrimary to="new">
+          {!data?.items?.length && <ButtonPrimary to="new">
             <div>New</div>
             <PlusIcon className="h-5 w-5" />
           </ButtonPrimary>}
