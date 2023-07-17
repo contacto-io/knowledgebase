@@ -21,7 +21,13 @@ import clsx from "clsx";
 import ColorGradientUtils from "~/utils/shared/colors/ColorGradientUtils";
 import ColorBackgroundUtils from "~/utils/shared/colors/ColorBackgroundUtils";
 
-export default function KnowledgeBaseForm({ item, onDelete }: { item?: KnowledgeBaseDto; onDelete?: () => void }) {
+export default function KnowledgeBaseForm({
+  item,
+  onDelete,
+}: {
+  item?: KnowledgeBaseDto;
+  onDelete?: () => void;
+}) {
   const navigation = useNavigation();
   const navigate = useNavigate();
 
@@ -37,15 +43,24 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
   const [slug, setSlug] = useState(item?.slug || "");
   const [title, setTitle] = useState(item?.title || "");
   const [description, setDescription] = useState(item?.description || "");
-  const [defaultLanguage, setDefaultLanguage] = useState<string | undefined>(item?.defaultLanguage || "en");
-  const [layout, setLayout] = useState<"list" | "articles" | "grid">(item?.layout || ("list" as any));
+  const [defaultLanguage, setDefaultLanguage] = useState<string | undefined>(
+    item?.defaultLanguage || "en"
+  );
+  const [layout, setLayout] = useState<"list" | "articles" | "grid">(
+    item?.layout || ("list" as any)
+  );
   const [color, setColor] = useState(item?.color || Colors.BLUE);
   const [enabled, setEnabled] = useState(item?.enabled ?? false);
   // const [metatags, setMetatags] = useState<MetaTagsDto>(item?.metatags || []);
   const [languages, setLanguages] = useState<string[]>(item?.languages || []);
-  const [logo, setLogo] = useState<"light" | "dark" | string>(item?.logo || "dark");
+  const [logo, setLogo] = useState<"light" | "dark" | string>(
+    item?.logo ||
+      "https://www.vhv.rs/dpng/d/565-5650634_transparent-qualcomm-logo-png-plivo-logo-transparent-png.png"
+  );
   const [seoImage, setSeoImage] = useState(item?.seoImage || "");
-  const [links, setLinks] = useState<{ name: string; href: string; order: number }[]>(item?.links || []);
+  const [links, setLinks] = useState<
+    { name: string; href: string; order: number }[]
+  >(item?.links || []);
 
   useEffect(() => {
     if (!item) {
@@ -65,19 +80,55 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
         className="sm:max-w-md"
         overflowYScroll={true}
       >
-        <Form method="post" className="inline-block w-full overflow-hidden p-1 text-left align-bottom sm:align-middle">
+        <Form
+          method="post"
+          className="inline-block w-full overflow-hidden p-1 text-left align-bottom sm:align-middle"
+        >
           <input type="hidden" name="action" value={item ? "edit" : "new"} />
           {links.map((item, index) => {
-            return <input type="hidden" name="links[]" value={JSON.stringify(item)} key={index} />;
+            return (
+              <input
+                type="hidden"
+                name="links[]"
+                value={JSON.stringify(item)}
+                key={index}
+              />
+            );
           })}
 
           <div className="space-y-2">
-            <InputText ref={mainInput} autoFocus name="title" title={"Title"} value={title} setValue={setTitle} required />
-            <InputText name="slug" title={"Slug"} value={slug} setValue={setSlug} required />
-            <InputText name="description" title={"Description"} value={description} setValue={setDescription} />
+            <InputText
+              ref={mainInput}
+              autoFocus
+              name="title"
+              title={"Title"}
+              value={title}
+              setValue={setTitle}
+              required
+            />
+            <InputText
+              name="slug"
+              title={"Slug"}
+              value={slug}
+              setValue={setSlug}
+              required
+            />
+            <InputText
+              name="description"
+              title={"Description"}
+              value={description}
+              setValue={setDescription}
+            />
             <div>
               {languages?.map((item, idx) => {
-                return <input key={idx} type="hidden" name={`languages[]`} value={item} />;
+                return (
+                  <input
+                    key={idx}
+                    type="hidden"
+                    name={`languages[]`}
+                    value={item}
+                  />
+                );
               })}
               <InputCombobox
                 name="languages"
@@ -139,20 +190,21 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
               title={"Logo"}
               value={logo}
               setValue={setLogo}
-              hint={"light, dark or url"}
+              hint={"Enter a URL"}
               button={
-                <div className="absolute inset-y-0 right-0 flex py-0.5 pr-0.5 ">
+                <div className="absolute inset-y-0 right-0 flex py-0.5 pr-0.5">
                   <kbd
                     className={clsx(
                       "inline-flex w-auto items-center justify-center rounded border border-gray-300 px-1 text-center font-sans text-xs font-medium text-gray-500",
-                      ColorBackgroundUtils.getBg700(color)
+                      // ColorBackgroundUtils.getBg700(color)
                     )}
                   >
-                    {logo === "light" ? (
+                    {/* {logo === "light" ? (
                       <img className="h-7 w-auto" src={LogoLight} alt="Logo" />
                     ) : logo === "dark" ? (
                       <img className="h-7 w-auto" src={LogoDark} alt="Logo" />
-                    ) : logo.startsWith("http") ? (
+                    ) :  */}
+                    {logo.startsWith("http") ? (
                       <img className="h-7 w-auto" src={logo} alt="Logo" />
                     ) : (
                       <div className="italic text-white">Invalid</div>
@@ -161,10 +213,20 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
                 </div>
               }
             />
-            <InputText name="seoImage" title={"SEO Image"} value={seoImage} setValue={setSeoImage} hint={"url"} />
+            <InputText
+              name="seoImage"
+              title={"SEO Image"}
+              value={seoImage}
+              setValue={setSeoImage}
+              hint={"url"}
+            />
             {seoImage && (
               <div className="col-span-12">
-                <img className="overflow-hidden rounded-lg shadow-xl xl:border-b xl:border-gray-200" src={seoImage} alt={title} />
+                <img
+                  className="overflow-hidden rounded-lg shadow-xl xl:border-b xl:border-gray-200"
+                  src={seoImage}
+                  alt={title}
+                />
               </div>
             )}
 
@@ -173,7 +235,9 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
               title={"Enabled"}
               value={enabled}
               setValue={setEnabled}
-              description={"If disabled, the knowledge base will not be accessible."}
+              description={
+                "If disabled, the knowledge base will not be accessible."
+              }
             />
 
             <KbNavLinksTable items={links} setItems={setLinks} />
@@ -181,14 +245,28 @@ export default function KnowledgeBaseForm({ item, onDelete }: { item?: Knowledge
           <div className="mt-5 flex justify-between space-x-2 sm:mt-6">
             <div>
               {onDelete && (
-                <ButtonSecondary disabled={navigation.state === "submitting"} type="button" className="w-full" onClick={onDelete} destructive>
+                <ButtonSecondary
+                  disabled={navigation.state === "submitting"}
+                  type="button"
+                  className="w-full"
+                  onClick={onDelete}
+                  destructive
+                >
                   <div>{"Delete"}</div>
                 </ButtonSecondary>
               )}
             </div>
             <div className="flex space-x-2">
-              <ButtonSecondary onClick={() => navigate("/admin/knowledge-base/bases")}>{"Cancel"}</ButtonSecondary>
-              <LoadingButton actionName={item ? "edit" : "new"} type="submit" disabled={navigation.state === "submitting"}>
+              <ButtonSecondary
+                onClick={() => navigate("/admin/knowledge-base/bases")}
+              >
+                {"Cancel"}
+              </ButtonSecondary>
+              <LoadingButton
+                actionName={item ? "edit" : "new"}
+                type="submit"
+                disabled={navigation.state === "submitting"}
+              >
                 {"Save"}
               </LoadingButton>
             </div>
